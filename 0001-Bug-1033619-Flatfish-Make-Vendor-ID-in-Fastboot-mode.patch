@@ -1,0 +1,26 @@
+From d3022476f04ce316d61ea5b0b362ee1504b84e6d Mon Sep 17 00:00:00 2001
+From: Flatfish <flatfish.fox@gmail.com>
+Date: Wed, 9 Jul 2014 13:46:23 +0800
+Subject: [PATCH] Bug 1033619 - [Flatfish] Make Vendor ID in Fastboot mode
+ match Vendor ID in normal (adb) mode
+
+---
+ arch/arm/cpu/armv7/sunxi/fastboot.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/sunxi/fastboot.c b/arch/arm/cpu/armv7/sunxi/fastboot.c
+index 18df136..1875318 100644
+--- a/arch/arm/cpu/armv7/sunxi/fastboot.c
++++ b/arch/arm/cpu/armv7/sunxi/fastboot.c
+@@ -65,7 +65,7 @@
+ #define FASTBOOT_CCMU                   0x01c20000
+ 
+ /* vid & pid */
+-#define	DEVICE_VENDOR_ID  					0x0BB4  //0x1F3A
++#define	DEVICE_VENDOR_ID  					0x18D1  //0x1F3A
+ #define	DEVICE_PRODUCT_ID 					0x0FFF  //0x1010
+ #define	DEVICE_BCD        					0x0200
+ 
+-- 
+2.0.1
+
