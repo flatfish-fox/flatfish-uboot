@@ -1,0 +1,112 @@
+From 90d74d7ecea73ac806fc2f695b70fa64348f942d Mon Sep 17 00:00:00 2001
+From: Flatfish <flatfish.fox@gmail.com>
+Date: Tue, 15 Jul 2014 17:30:12 +0800
+Subject: [PATCH] Bug 1026963 - [Flatfish] Need a bare boot image supporting
+ fastboot mode (for solving the brick problem)
+
+---
+ board/allwinner/sun6i/sun6i.c | 27 +++++++++++++++++++++++++++
+ common/cmd_fastboot.c         | 20 ++++++++++++++++++++
+ common/env_sunxi_flash.c      |  3 ++-
+ 3 files changed, 49 insertions(+), 1 deletion(-)
+
+diff --git a/board/allwinner/sun6i/sun6i.c b/board/allwinner/sun6i/sun6i.c
+index 529332c..e60ba03 100755
+--- a/board/allwinner/sun6i/sun6i.c
++++ b/board/allwinner/sun6i/sun6i.c
+@@ -38,6 +38,8 @@ DECLARE_GLOBAL_DATA_PTR;
+ 
+ static struct bootloader_message misc_message;
+ 
++extern int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
++
+ #if 0
+ void fastboot_flash_partition_init(void)
+ {
+@@ -213,6 +215,31 @@ int android_misc_flash_check(void) {
+ 			memset(buffer, 0, 2048);
+ 			sunxi_flash_write(misc_offset, 2048/512, buffer);
+ 		}
++		else
++		{
++			if(strcmp(getenv("boot_flashed") , "yes")) {
++				sprintf(misc_message.command, "boot-fastboot");
++				memcpy(buffer, &misc_message, sizeof(misc_message));
++				sunxi_flash_write(misc_offset, 2048/512, buffer);
++                                udelay (100000); /* 0.1 sec */
++                                do_reset (NULL, 0, 0, NULL);
++
++                                /* This code is unreachable,
++                                   leave it to make the compiler happy */
++                                return 0;
++			}
++			if(strcmp(getenv("system_flashed") , "yes")) {
++				sprintf(misc_message.command, "boot-fastboot");
++				memcpy(buffer, &misc_message, sizeof(misc_message));
++				sunxi_flash_write(misc_offset, 2048/512, buffer);
++                                udelay (100000); /* 0.1 sec */
++                                do_reset (NULL, 0, 0, NULL);
++
++                                /* This code is unreachable,
++                                   leave it to make the compiler happy */
++                                return 0;
++			}
++		}
+ 	}
+ 	else
+ 	{
+diff --git a/common/cmd_fastboot.c b/common/cmd_fastboot.c
+index 37e9d23..120cdd9 100755
+--- a/common/cmd_fastboot.c
++++ b/common/cmd_fastboot.c
+@@ -1164,6 +1164,16 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
+ 									NULL)) {
+ 								printf("Writing sparsed: '%s' DONE!\n", ptn->name);
+ 								sprintf(response, "OKAY");
++								if (0 == strcmp(ptn->name, "boot"))
++                                                                {
++									setenv("boot_flashed", "yes");
++									saveenv();
++								}
++								if (0 == strcmp(ptn->name, "system"))
++                                                                {
++									setenv("system_flashed", "yes");
++									saveenv();
++								}
+ 							} else {
+ 								printf("Writing sparsed '%s' FAILED!\n", ptn->name);
+ 								sprintf(response, "FAIL: Sparsed Write");
+@@ -1181,6 +1191,16 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
+ 							{
+ 								printf("partition '%s' flashed\n", ptn->name);
+ 								sprintf(response, "OKAY");
++								if (0 == strcmp(ptn->name, "boot"))
++                                                                {
++									setenv("boot_flashed", "yes");
++									saveenv();
++								}
++								if (0 == strcmp(ptn->name, "system"))
++                                                                {
++									setenv("system_flashed", "yes");
++									saveenv();
++								}
+ 							}
+ 						}
+ 					}
+diff --git a/common/env_sunxi_flash.c b/common/env_sunxi_flash.c
+index 9243b31..2b9648b 100755
+--- a/common/env_sunxi_flash.c
++++ b/common/env_sunxi_flash.c
+@@ -95,7 +95,8 @@ static int flash_saveenv(void)
+ 	}
+ 	env_new.crc   = crc32(0, env_new.data, ENV_SIZE);
+ 
+-	return sunxi_flash_write(env_offset/512, env_size/512, &env_new);
++	//return sunxi_flash_write(env_offset/512, env_size/512, &env_new);
++	return sunxi_flash_write(65536, 256, &env_new);
+ }
+ 
+ int saveenv(void)
+-- 
+2.0.1
+
